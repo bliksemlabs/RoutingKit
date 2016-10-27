@@ -1,4 +1,4 @@
-CFLAGS=-I../../include -std=c++11 -fopenmp -O0 -ggdb3
+CFLAGS=-I../../include -std=c++11 -fopenmp -march=native -O2 -ggdb3
 LDFLAGS=../../lib/libroutingkit.a -lm -lz -pthread -lzmqpp -lzmq
 
 all:
