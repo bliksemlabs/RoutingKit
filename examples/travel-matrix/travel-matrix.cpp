@@ -3,6 +3,7 @@
 #include <routingkit/inverse_vector.h>
 #include <routingkit/timer.h>
 #include <routingkit/geo_position_to_node.h>
+#include <routingkit/geo_dist.h>
 #include <iostream>
 #include <string>
 #include <zmqpp/zmqpp.hpp>
@@ -15,33 +16,14 @@ using namespace std;
 
 using json = nlohmann::json;
 
-
-/* Haversine; great circle distance */
-
-#define R 6371.0088
-#define TO_RAD (3.1415926536f / 180.0f)
-
-double dist(double th1, double ph1, double th2, double ph2)
-{
-    double dx, dy, dz;
-    ph1 -= ph2;
-    ph1 *= TO_RAD, th1 *= TO_RAD, th2 *= TO_RAD;
-
-    dz = sin(th1) - sin(th2);
-    dx = cos(ph1) * cos(th1) - cos(th2);
-    dy = sin(ph1) * cos(th1);
-    return asin(sqrt(dx * dx + dy * dy + dz * dz) / 2) * 2 * R * 1000;
-}
-
 json distance(json coordinate_from, json coordinate_to) {
     json pair;
-    unsigned distance = dist (coordinate_from[0], coordinate_from[1], coordinate_to[0], coordinate_to[1]);
+    unsigned distance = geo_dist (coordinate_from[0], coordinate_from[1], coordinate_to[0], coordinate_to[1]);
     pair.push_back (distance);
     pair.push_back (distance / 12);
 
     return pair;
 }
-
 
 int main (int argc, char *argv[]) {
     if (argc != 2) return -1;
