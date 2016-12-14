@@ -164,7 +164,7 @@ int main (int argc, char *argv[]) {
 
                             /* when succesful, the distance is available */
                             unsigned distance = ch_query.get_distance();
-                            if (distance != 0) {
+                            if (distance != 0 && distance != invalid_id) {
 
                                 /* the travel time should be computed by a
                                  * sum over all arcs.
