@@ -184,7 +184,9 @@ int main (int argc, char *argv[]) {
                              */
                             auto coordinate_from = source.at(si);
                             auto coordinate_to = target.at(ti);
-                            pair = distance (coordinate_from, coordinate_to);
+                            unsigned dist = distance (coordinate_from, coordinate_to);
+							pair.push_back (dist);
+							pair.push_back (nullptr);
                         }
                         reply["matrix"].push_back (pair);
                         ti++;
