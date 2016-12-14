@@ -83,8 +83,16 @@ bool is_osm_way_used_by_pedestrians(uint64_t osm_way_id, const TagMap&tags, std:
 
 	const char*access = tags["access"];
 	if(access){
-		if(!(str_eq(access, "yes") || str_eq(access, "permissive") || str_eq(access, "delivery")|| str_eq(access, "designated") || str_eq(access, "destination") ||
-             str_eq(access, "agricultural") || str_eq(access, "forestry"))) {
+		if(
+			!str_eq(access, "yes") &&
+			!str_eq(access, "permissive") &&
+			!str_eq(access, "delivery") &&
+			!str_eq(access, "designated") &&
+			!str_eq(access, "destination") &&
+			!str_eq(access, "agricultural") &&
+			!str_eq(access, "forestry") &&
+			!str_eq(access, "public")
+		){
 			return false;
 		}
 	}
@@ -131,7 +139,6 @@ bool is_osm_way_used_by_pedestrians(uint64_t osm_way_id, const TagMap&tags, std:
 
 	return false;
 }
-
 
 bool is_osm_way_used_by_cars(uint64_t osm_way_id, const TagMap&tags, std::function<void(const std::string&)>log_message){
 	const char* junction = tags["junction"];

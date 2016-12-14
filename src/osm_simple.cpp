@@ -88,9 +88,6 @@ SimpleOSMPedestrianRoutingGraph simple_load_osm_pedestrian_routing_graph_from_pb
 	ret.latitude = std::move(routing_graph.latitude);
 	ret.longitude = std::move(routing_graph.longitude);
 
-	/* TODO: ferry at 5km/h is now equal to walking speed */
-	ret.travel_time = ret.geo_distance; // at 1 m/s
-
 	return ret;
 }
 
