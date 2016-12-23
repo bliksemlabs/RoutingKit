@@ -5,6 +5,7 @@
 #include <functional>
 #include <string>
 #include <stdint.h>
+#include <routingkit/osm_graph_builder.h>
 
 namespace RoutingKit{
 
@@ -16,6 +17,9 @@ struct SimpleOSMCarRoutingGraph{
 	std::vector<uint32_t>geo_distance;
 	std::vector<float>latitude;
 	std::vector<float>longitude;
+
+	std::vector<OSMWayClass>way_class;
+	std::vector<unsigned>way_max_speed;
 
 	unsigned node_count() const {
 		return first_out.size()-1;

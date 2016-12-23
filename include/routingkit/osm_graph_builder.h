@@ -31,6 +31,38 @@ enum class OSMWayDirectionCategory{
 	closed
 };
 
+enum class OSMWayClass{
+	primary,
+	primary_link,
+	secondary,
+	secondary_link,
+	tertiary,
+	tertiary_link,
+	trunk,
+	trunk_link,
+	motorway,
+	motorway_junction,
+	unclassified,
+	service,
+	living_street,
+	residential,
+	bicycle_road,
+	ferry,
+	junction,
+	construction,
+	path,
+	footway,
+	cycleway,
+	bridleway,
+	pedestian,
+	bus_guideway,
+	raceway,
+	escape,
+	steps,
+	conveying,
+	other
+};
+
 struct OSMRoutingGraph{
 	std::vector<uint32_t>first_out;
 	std::vector<uint32_t>head;
@@ -52,7 +84,7 @@ OSMRoutingGraph load_osm_routing_graph_from_pbf(
 	const std::string&pbf_file,
 
 	const OSMRoutingIDMapping&mapping,
-	std::function<OSMWayDirectionCategory(uint64_t osm_way_id, unsigned routing_way_id, const TagMap&way_tags)>way_callback, // return in which direction a way is open
+	std::function<OSMWayDirectionCategory(uint64_t osm_way_id, unsigned routing_way_id, const TagMap&way_tags)>way_direction_callback, // return in which direction a way is open
 
 	std::function<void(const std::string&)>log_message = [](const std::string&){},
 	bool file_is_ordered_even_though_file_header_says_that_it_is_unordered = false

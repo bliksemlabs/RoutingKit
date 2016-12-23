@@ -44,7 +44,7 @@ namespace{
 	template<class F>
 	void split_str_at_osm_value_separators(char*in, const F&f){
 		while(*in == ' ')
-			++in;	
+			++in;
 		const char*value_begin = in;
 		for(;;){
 			while(*in != '\0' && *in != ';')
@@ -112,14 +112,14 @@ bool is_osm_way_used_by_cars(uint64_t osm_way_id, const TagMap&tags, std::functi
 	}
 
 	if(
-		str_eq(highway, "construction") || 
-		str_eq(highway, "path") || 
-		str_eq(highway, "footway") || 
-		str_eq(highway, "cycleway") || 
-		str_eq(highway, "bridleway") || 
+		str_eq(highway, "construction") ||
+		str_eq(highway, "path") ||
+		str_eq(highway, "footway") ||
+		str_eq(highway, "cycleway") ||
+		str_eq(highway, "bridleway") ||
 		str_eq(highway, "pedestrian") ||
 		str_eq(highway, "bus_guideway") ||
-		str_eq(highway, "raceway") || 
+		str_eq(highway, "raceway") ||
 		str_eq(highway, "escape") ||
 		str_eq(highway, "steps") ||
 		str_eq(highway, "conveying")
@@ -130,7 +130,7 @@ bool is_osm_way_used_by_cars(uint64_t osm_way_id, const TagMap&tags, std::functi
 	if(oneway != nullptr){
 		if(str_eq(oneway, "reversible")) {
 			return false;
-		} 
+		}
 	}
 
 	const char* maxspeed = tags["maxspeed"];
@@ -138,6 +138,84 @@ bool is_osm_way_used_by_cars(uint64_t osm_way_id, const TagMap&tags, std::functi
 		return true;
 
 	return false;
+}
+
+
+OSMWayClass get_osm_way_class(uint64_t osm_way_id, const TagMap&tags, std::function<void(const std::string&)>log_message) {
+	const char
+		*junction = tags["junction"],
+		*highway = tags["highway"]
+	;
+
+	if (highway != nullptr) {
+		if (str_eq(highway, "primary")) return OSMWayClass::primary;
+		if (str_eq(highway, "primary_link")) return OSMWayClass::primary_link;
+		if (str_eq(highway, "secondary")) return OSMWayClass::secondary;
+		if (str_eq(highway, "secondary_link")) return OSMWayClass::secondary_link;
+		if (str_eq(highway, "tertiary")) return OSMWayClass::tertiary;
+		if (str_eq(highway, "tertiary_link")) return OSMWayClass::tertiary_link;
+		if (str_eq(highway, "trunk")) return OSMWayClass::trunk;
+		if (str_eq(highway, "trunk_link")) return OSMWayClass::trunk_link;
+		if (str_eq(highway, "motorway")) return OSMWayClass::motorway;
+		if (str_eq(highway, "motorway_junction")) return OSMWayClass::motorway_junction;
+		if (str_eq(highway, "unclassified")) return OSMWayClass::unclassified;
+		if (str_eq(highway, "service")) return OSMWayClass::service;
+		if (str_eq(highway, "living_street")) return OSMWayClass::living_street;
+		if (str_eq(highway, "residential")) return OSMWayClass::residential;
+		if (str_eq(highway, "bicycle_road")) return OSMWayClass::bicycle_road;
+		if (str_eq(highway, "ferry")) return OSMWayClass::ferry;
+		if (str_eq(highway, "construction")) return OSMWayClass::construction;
+		if (str_eq(highway, "path")) return OSMWayClass::path;
+		if (str_eq(highway, "footway")) return OSMWayClass::footway;
+		if (str_eq(highway, "cycleway")) return OSMWayClass::cycleway;
+		if (str_eq(highway, "bridleway")) return OSMWayClass::bridleway;
+		if (str_eq(highway, "pedestian")) return OSMWayClass::pedestian;
+		if (str_eq(highway, "bus_guideway")) return OSMWayClass::bus_guideway;
+		if (str_eq(highway, "raceway")) return OSMWayClass::raceway;
+		if (str_eq(highway, "escape")) return OSMWayClass::escape;
+		if (str_eq(highway, "steps")) return OSMWayClass::steps;
+		if (str_eq(highway, "conveying")) return OSMWayClass::conveying;
+
+	} else
+	if (junction != nullptr) {
+		return OSMWayClass::junction;
+	}
+
+	return OSMWayClass::other;
+}
+
+
+const char* get_osm_way_class_string(OSMWayClass way_class) {
+		if (way_class == OSMWayClass::primary) { return "primary"; } else
+		if (way_class == OSMWayClass::primary_link) { return "primary_link"; } else
+		if (way_class == OSMWayClass::secondary) { return "secondary"; } else
+		if (way_class == OSMWayClass::secondary_link) { return "secondary_link"; } else
+		if (way_class == OSMWayClass::tertiary) { return "tertiary"; } else
+		if (way_class == OSMWayClass::tertiary_link) { return "tertiary_link"; } else
+		if (way_class == OSMWayClass::trunk) { return "trunk"; } else
+		if (way_class == OSMWayClass::trunk_link) { return "trunk_link"; } else
+		if (way_class == OSMWayClass::motorway) { return "motorway"; } else
+		if (way_class == OSMWayClass::motorway_junction) { return "motorway_junction"; } else
+		if (way_class == OSMWayClass::unclassified) { return "unclassified"; } else
+		if (way_class == OSMWayClass::service) { return "service"; } else
+		if (way_class == OSMWayClass::living_street) { return "living_street"; } else
+		if (way_class == OSMWayClass::residential) { return "residential"; } else
+		if (way_class == OSMWayClass::bicycle_road) { return "bicycle_road"; } else
+		if (way_class == OSMWayClass::ferry) { return "ferry"; } else
+		if (way_class == OSMWayClass::junction) { return "junction"; } else
+		if (way_class == OSMWayClass::construction) { return "construction"; } else
+		if (way_class == OSMWayClass::path) { return "path"; } else
+		if (way_class == OSMWayClass::footway) { return "footway"; } else
+		if (way_class == OSMWayClass::cycleway) { return "cycleway"; } else
+		if (way_class == OSMWayClass::bridleway) { return "bridleway"; } else
+		if (way_class == OSMWayClass::pedestian) { return "pedestian"; } else
+		if (way_class == OSMWayClass::bus_guideway) { return "bus_guideway"; } else
+		if (way_class == OSMWayClass::raceway) { return "raceway"; } else
+		if (way_class == OSMWayClass::escape) { return "escape"; } else
+		if (way_class == OSMWayClass::steps) { return "steps"; } else
+		if (way_class == OSMWayClass::conveying) { return "conveying"; }
+
+		return "other";
 }
 
 
@@ -164,10 +242,9 @@ OSMWayDirectionCategory get_osm_car_direction_category(uint64_t osm_way_id, cons
 	} else if(highway != nullptr && (str_eq(highway, "motorway") || str_eq(highway, "motorway_link"))) {
 		return OSMWayDirectionCategory::only_open_forwards;
 	}
-	return OSMWayDirectionCategory::open_in_both;	
+	return OSMWayDirectionCategory::open_in_both;
 }
 
-namespace{
 	unsigned parse_maxspeed_value(uint64_t osm_way_id, const char*maxspeed, std::function<void(const std::string&)>log_message){
 		if(str_eq(maxspeed, "signals") || str_eq(maxspeed, "variable"))
 			return inf_weight;
@@ -205,7 +282,7 @@ namespace{
 			return 90;
 		if(str_eq(maxspeed, "de:zone:30"))
 			return 30;
-		
+
 
 		if('0' <= *maxspeed && *maxspeed <= '9'){
 			unsigned speed = 0;
@@ -232,7 +309,6 @@ namespace{
 
 		return inf_weight;
 	}
-}
 
 unsigned get_osm_way_speed(uint64_t osm_way_id, const TagMap&tags, std::function<void(const std::string&)>log_message){
 	auto maxspeed = tags["maxspeed"];
@@ -299,21 +375,21 @@ unsigned get_osm_way_speed(uint64_t osm_way_id, const TagMap&tags, std::function
 	}
 
 	if(maxspeed && highway)
-		log_message("Warning: OSM way "+std::to_string(osm_way_id) +" has an unrecognized \"maxspeed\" tag of \""+maxspeed+"\" and an unrecognized \"highway\" tag of \""+highway+"\" and an no junction tag -> assuming 50km/h."); 
+		log_message("Warning: OSM way "+std::to_string(osm_way_id) +" has an unrecognized \"maxspeed\" tag of \""+maxspeed+"\" and an unrecognized \"highway\" tag of \""+highway+"\" and an no junction tag -> assuming 50km/h.");
 	if(!maxspeed && highway)
-		log_message("Warning: OSM way "+std::to_string(osm_way_id) +" has no \"maxspeed\" and an unrecognized \"highway\" tag of \""+highway+"\" and an no junction tag -> assuming 50km/h."); 
+		log_message("Warning: OSM way "+std::to_string(osm_way_id) +" has no \"maxspeed\" and an unrecognized \"highway\" tag of \""+highway+"\" and an no junction tag -> assuming 50km/h.");
 	if(!maxspeed && !highway)
-		log_message("Warning: OSM way "+std::to_string(osm_way_id) +" has no \"maxspeed\" and no \"highway\" tag of \""+highway+"\" and an no junction tag -> assuming 50km/h."); 
+		log_message("Warning: OSM way "+std::to_string(osm_way_id) +" has no \"maxspeed\" and no \"highway\" tag of \""+highway+"\" and an no junction tag -> assuming 50km/h.");
 	if(maxspeed && !highway)
-		log_message("Warning: OSM way "+std::to_string(osm_way_id) +" has an unrecognized \"maxspeed\" tag of \""+maxspeed+"\" and no \"highway\" tag and an no junction tag -> assuming 50km/h."); 
+		log_message("Warning: OSM way "+std::to_string(osm_way_id) +" has an unrecognized \"maxspeed\" tag of \""+maxspeed+"\" and no \"highway\" tag and an no junction tag -> assuming 50km/h.");
 	return 50;
 }
 
 std::string get_osm_way_name(uint64_t osm_way_id, const TagMap&tags, std::function<void(const std::string&)>log_message){
-	auto 
+	auto
 		name = tags["name"],
 		ref = tags["ref"];
-	
+
 	if(name != nullptr && ref != nullptr)
 		return std::string(name) + ";"+ref;
 	else if(name != nullptr)
