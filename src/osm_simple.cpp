@@ -32,8 +32,7 @@ SimpleOSMCarRoutingGraph simple_load_osm_car_routing_graph_from_pbf(
 		mapping,
 		[&](uint64_t osm_way_id, unsigned routing_way_id, const TagMap&way_tags){
 			way_speed[routing_way_id] = get_osm_way_speed(osm_way_id, way_tags, log_message);
-			way_class[routing_way_id] = OSMWayClass::other;
-			get_osm_way_class(osm_way_id, way_tags, log_message);
+			way_class[routing_way_id] = get_osm_way_class(osm_way_id, way_tags, log_message);
 
 			auto maxspeed = way_tags["maxspeed"];
 		    if(maxspeed != nullptr) {
