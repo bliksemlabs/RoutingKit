@@ -41,6 +41,7 @@ enum class OSMWayClass{
 	trunk,
 	trunk_link,
 	motorway,
+	motorway_link,
 	motorway_junction,
 	unclassified,
 	service,

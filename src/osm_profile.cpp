@@ -157,6 +157,7 @@ OSMWayClass get_osm_way_class(uint64_t osm_way_id, const TagMap&tags, std::funct
 		if (str_eq(highway, "trunk")) return OSMWayClass::trunk;
 		if (str_eq(highway, "trunk_link")) return OSMWayClass::trunk_link;
 		if (str_eq(highway, "motorway")) return OSMWayClass::motorway;
+		if (str_eq(highway, "motorway_link")) return OSMWayClass::motorway_link;
 		if (str_eq(highway, "motorway_junction")) return OSMWayClass::motorway_junction;
 		if (str_eq(highway, "unclassified")) return OSMWayClass::unclassified;
 		if (str_eq(highway, "service")) return OSMWayClass::service;
@@ -195,6 +196,7 @@ const char* get_osm_way_class_string(OSMWayClass way_class) {
 		if (way_class == OSMWayClass::trunk) { return "trunk"; } else
 		if (way_class == OSMWayClass::trunk_link) { return "trunk_link"; } else
 		if (way_class == OSMWayClass::motorway) { return "motorway"; } else
+		if (way_class == OSMWayClass::motorway_link) { return "motorway_link"; } else
 		if (way_class == OSMWayClass::motorway_junction) { return "motorway_junction"; } else
 		if (way_class == OSMWayClass::unclassified) { return "unclassified"; } else
 		if (way_class == OSMWayClass::service) { return "service"; } else

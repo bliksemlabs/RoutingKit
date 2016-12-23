@@ -24,15 +24,16 @@ SimpleOSMCarRoutingGraph simple_load_osm_car_routing_graph_from_pbf(
 
 	unsigned routing_way_count = mapping.is_routing_way.population_count();
 	std::vector<uint32_t>way_speed(routing_way_count);
-	std::vector<OSMWayClass>way_class(routing_way_count);
 	std::vector<unsigned>way_max_speed(routing_way_count);
+	std::vector<OSMWayClass>way_class(routing_way_count);
 
 	auto routing_graph = load_osm_routing_graph_from_pbf(
 		pbf_file,
 		mapping,
 		[&](uint64_t osm_way_id, unsigned routing_way_id, const TagMap&way_tags){
 			way_speed[routing_way_id] = get_osm_way_speed(osm_way_id, way_tags, log_message);
-			way_class[routing_way_id] = get_osm_way_class(osm_way_id, way_tags, log_message);
+			way_class[routing_way_id] = OSMWayClass::other;
+			get_osm_way_class(osm_way_id, way_tags, log_message);
 
 			auto maxspeed = way_tags["maxspeed"];
 		    if(maxspeed != nullptr) {
@@ -56,6 +57,8 @@ SimpleOSMCarRoutingGraph simple_load_osm_car_routing_graph_from_pbf(
 	ret.latitude = std::move(routing_graph.latitude);
 	ret.longitude = std::move(routing_graph.longitude);
 	ret.travel_time = ret.geo_distance;
+	ret.way_class.reserve(ret.geo_distance.size());
+	ret.way_max_speed.reserve(ret.geo_distance.size());
 
 	for(unsigned a=0; a<ret.travel_time.size(); ++a){
 		ret.travel_time[a] *= 18;
