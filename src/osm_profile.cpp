@@ -177,6 +177,8 @@ OSMWayClass get_osm_way_class(uint64_t osm_way_id, const TagMap&tags, std::funct
 		if (str_eq(highway, "steps")) return OSMWayClass::steps;
 		if (str_eq(highway, "conveying")) return OSMWayClass::conveying;
 
+		printf("%s\n", highway);
+
 	} else
 	if (junction != nullptr) {
 		return OSMWayClass::junction;

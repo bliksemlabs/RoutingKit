@@ -57,6 +57,7 @@ SimpleOSMCarRoutingGraph simple_load_osm_car_routing_graph_from_pbf(
 	ret.longitude = std::move(routing_graph.longitude);
 	ret.travel_time = ret.geo_distance;
 	ret.way_class.reserve(ret.geo_distance.size());
+	ret.way_speed.reserve(ret.geo_distance.size());
 	ret.way_max_speed.reserve(ret.geo_distance.size());
 
 	for(unsigned a=0; a<ret.travel_time.size(); ++a){
@@ -65,6 +66,7 @@ SimpleOSMCarRoutingGraph simple_load_osm_car_routing_graph_from_pbf(
 		ret.travel_time[a] /= 5;
 
 		ret.way_class[a] = way_class[routing_graph.way[a]];
+		ret.way_speed[a] = way_speed[routing_graph.way[a]];
 		ret.way_max_speed[a] = way_max_speed[routing_graph.way[a]];
 	}
 

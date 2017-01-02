@@ -19,6 +19,7 @@ struct SimpleOSMCarRoutingGraph{
 	std::vector<float>longitude;
 
 	std::vector<OSMWayClass>way_class;
+	std::vector<unsigned>way_speed;
 	std::vector<unsigned>way_max_speed;
 
 	unsigned node_count() const {
