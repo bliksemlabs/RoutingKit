@@ -33,13 +33,7 @@ SimpleOSMCarRoutingGraph simple_load_osm_car_routing_graph_from_pbf(
 		[&](uint64_t osm_way_id, unsigned routing_way_id, const TagMap&way_tags){
 			way_speed[routing_way_id] = get_osm_way_speed(osm_way_id, way_tags, log_message);
 			way_class[routing_way_id] = get_osm_way_class(osm_way_id, way_tags, log_message);
-
-			auto maxspeed = way_tags["maxspeed"];
-		    if(maxspeed != nullptr) {
-				way_max_speed[routing_way_id] = parse_maxspeed_value(osm_way_id, maxspeed, log_message);
-			} else {
-				way_max_speed[routing_way_id] = inf_weight;
-			}
+			way_max_speed[routing_way_id] = get_osm_max_speed(osm_way_id, way_tags, log_message);
 
 			return get_osm_car_direction_category(osm_way_id, way_tags, log_message);
 		},

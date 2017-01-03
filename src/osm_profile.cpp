@@ -314,7 +314,7 @@ OSMWayDirectionCategory get_osm_car_direction_category(uint64_t osm_way_id, cons
 		return inf_weight;
 	}
 
-unsigned get_osm_way_speed(uint64_t osm_way_id, const TagMap&tags, std::function<void(const std::string&)>log_message){
+unsigned get_osm_max_speed(uint64_t osm_way_id, const TagMap&tags, std::function<void(const std::string&)>log_message) {
 	auto maxspeed = tags["maxspeed"];
 	if(maxspeed != nullptr){
 		char lower_case_maxspeed[1024];
@@ -336,7 +336,18 @@ unsigned get_osm_way_speed(uint64_t osm_way_id, const TagMap&tags, std::function
 
 		if(speed != inf_weight)
 			return speed;
+	}
 
+	return inf_weight;
+}
+
+unsigned get_osm_way_speed(uint64_t osm_way_id, const TagMap&tags, std::function<void(const std::string&)>log_message){
+	auto maxspeed = tags["maxspeed"];
+	if(maxspeed){
+		unsigned speed = get_osm_max_speed(osm_way_id, tags, log_message);
+		if(speed != inf_weight){
+			return speed;
+		}
 	}
 
 	auto junction = tags["junction"];
