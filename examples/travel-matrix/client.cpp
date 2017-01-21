@@ -17,30 +17,75 @@ int main(int argc, char *argv[]) {
   // open the connection
   socket.connect(endpoint);
 
+  /* test a normal situation */
   {
-    // send a message
     zmqpp::message message;
-    // compose a message from a string and a number
-    message << "{\"departs\": [[9.0396988, 7.3708228]], \"arrives\": [[9.0929029, 7.4223216], [9.1393948, 7.3687402], [52.0, 4.0]]}";
+    message << "{\"departs\": [[52.08497,4.33394]], \"arrives\": [[52.01355,4.35433]]}";
     socket.send(message);
 
     socket.receive(message);
     string receive;
     message >> receive;
-    cout << receive;
+    cout << receive << "\n";
   }
 
+  /* test a shared depart and arrive node-id, same geographical location */
   {
-    // send a message
     zmqpp::message message;
-    // compose a message from a string and a number
-    message << "{\"departs\": [[\"a\", 7.3708228]], \"arrives\": [[9.0929029, 7.4223216], [9.1393948, 7.3687402], [52.0, 4.0]]}";
+    message << "{\"departs\": [[52.08497,4.33394]], \"arrives\": [[52.08497,4.33394]]}";
     socket.send(message);
 
     socket.receive(message);
     string receive;
     message >> receive;
-    cout << receive;
+    cout << receive << "\n";
   }
 
+  /* test a shared depart and arrive node-id, different geographical location */
+  {
+    zmqpp::message message;
+    message << "{\"departs\": [[52.08497,4.33394]], \"arrives\": [[52.08497,4.334]]}";
+    socket.send(message);
+
+    socket.receive(message);
+    string receive;
+    message >> receive;
+    cout << receive << "\n";
+  }
+
+  /* test two locations not geocoded to a node-id */
+  {
+    zmqpp::message message;
+    message << "{\"departs\": [[4.1514,52.0860]], \"arrives\": [[52.1465,4.1407]]}";
+    socket.send(message);
+
+    socket.receive(message);
+    string receive;
+    message >> receive;
+    cout << receive << "\n";
+  }
+
+  /* test invalid input */
+  {
+    zmqpp::message message;
+    message << "{\"departs\": [""], \"arrives\": [[52.1465,4.1407]]}";
+    socket.send(message);
+
+    socket.receive(message);
+    string receive;
+    message >> receive;
+    cout << receive << "\n";
+  }
+
+  /* combine the queries */
+  {
+    zmqpp::message message;
+    message << "{\"departs\": [[52.08497,4.33394],[4.1514,52.0860]], \"arrives\": [[52.01355,4.35433],[52.1465,4.1407],[52.08497,4.33394],[52.08497,4.334]]}";
+    socket.send(message);
+
+    socket.receive(message);
+    string receive;
+    message >> receive;
+    cout << receive << "\n";
+  }
 }

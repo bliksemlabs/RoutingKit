@@ -16,13 +16,62 @@ using namespace std;
 
 using json = nlohmann::json;
 
-json distance(json coordinate_from, json coordinate_to) {
-    json pair;
-    unsigned distance = geo_dist (coordinate_from[0], coordinate_from[1], coordinate_to[0], coordinate_to[1]);
-    pair.push_back (distance);
-    pair.push_back (distance / 12);
+json triple(json traveltime, json distance, json ascrowflies) {
+    json t;
+    t.push_back(traveltime);
+    t.push_back(distance);
+    t.push_back(ascrowflies);
+    return t;
+}
 
-    return pair;
+/* a coordinate is a pair of two valid numbers,
+ * with the domain:
+ *  -90.0f <  latitude < 90.0f
+ * -180.0f < longitude < 180.0f
+ */
+bool validcoordinate(json coordinate) {
+	return (coordinate.size() == 2 &&
+            coordinate[0].is_number() &&
+            coordinate[1].is_number() &&
+			coordinate[0] >  -90.0f && coordinate[0] <  90.0f &&
+			coordinate[1] > -180.0f && coordinate[0] < 180.0f);
+}
+
+json validateinput(json input) {
+	auto source = input["departs"];
+	auto target = input["arrives"];
+
+	json reply = nullptr;
+
+	/* Validate the input contains two arrays with at least two elements */
+	if (source.is_array() && source.size() > 0 &&
+		target.is_array() && target.size() > 0) {
+
+		/* validate that each element in the departure array consists of a coordinate */
+		for (json::iterator it = source.begin(); it != source.end(); ++it) {
+			auto coordinate = it.value();
+			if (!validcoordinate(coordinate)) {
+				reply["error"]["coordinate"].push_back(coordinate);
+			}
+		}
+
+		/* The same as above, but for the arrival positions */
+		for (json::iterator it = target.begin(); it != target.end(); ++it) {
+			auto coordinate = it.value();
+			if (!validcoordinate(coordinate)) {
+				reply["error"]["coordinate"].push_back(coordinate);
+			}
+		}
+
+		/* If we have errors terminate in our input coordinates, terminate */
+		if (reply["error"] != nullptr) {
+			reply["error"]["message"] = "Invalid coordinates found.";
+		}
+	} else {
+		reply["error"]["message"] = "Missing departure and/or arrival coordinates.";
+	}
+
+	return reply;
 }
 
 int main (int argc, char *argv[]) {
@@ -58,10 +107,10 @@ int main (int argc, char *argv[]) {
     socket.bind(endpoint);
 
     while (1) {
-        cout << "Receiving message..." << endl;
+        cout << "Blocking until a message has been received." << endl;
         zmqpp::message zmq_receive;
 
-        // decompose the message
+        /* decompose the message */
         socket.receive(zmq_receive);
         string receive;
         zmq_receive >> receive;
@@ -72,131 +121,88 @@ int main (int argc, char *argv[]) {
         auto target = input["arrives"];
 
         zmqpp::message zmq_reply;
-        json reply;
-        reply["error"];
-        reply["matrix"] = json::array();
 
-        /* Validate the input contains two arrays with at least two elements */
-        if (source.is_array() && source.size() > 0 &&
-            target.is_array() && target.size() > 0) {
+		json reply = validateinput(input);
+		if (reply != nullptr) {
+            /* cache the map_targets, otherwise we are geocoding them every time */
+            std::vector<std::vector<GeoPositionToNode::NearestNeighborhoodQueryResult>> map_targets;
 
-            /* create a list of node ids to be used as input for the search
-             * we assume that if we can't find any node within 1000m the result
-             * should be reevaluated and will result invalid_id.
-             */
-            std::vector<unsigned>source_list;
-            for (json::iterator it = source.begin(); it != source.end(); ++it) {
-
-                /* validate that the array consists of pairs of two numbers */
-                auto coordinate = it.value();
-                if (coordinate.size() == 2 &&
-                    coordinate[0].is_number() &&
-                    coordinate[1].is_number()) {
-
-                    /* Geocode the input */
-                    unsigned result = map_geo_position.find_nearest_neighbor_within_radius(coordinate[0], coordinate[1], 1000).id;
-
-                    /* Store the result as input for the planner */
-                    source_list.push_back(result);
-
-                    /* Errors while using this function are reported back */
-                    if (result == invalid_id) {
-                        reply["error"].push_back(coordinate);
-                    }
-
-                /* If the array consist of invalid values terminate */
-                } else {
-                    reply["error"] = "Invalid source coordinates. " + coordinate.dump();
-                    goto end;
-                }
-            }
-
-            /* The same as above, but for the arrival positions */
-            std::vector<unsigned>target_list;
             for (json::iterator it = target.begin(); it != target.end(); ++it) {
                 auto coordinate = it.value();
-                if (coordinate.size() == 2 &&
-                    coordinate[0].is_number() &&
-                    coordinate[1].is_number()) {
-
-                    unsigned result = map_geo_position.find_nearest_neighbor_within_radius(coordinate[0], coordinate[1], 1000).id;
-                    target_list.push_back(result);
-
-                    if (result == invalid_id) {
-                        reply["error"].push_back(coordinate);
-                    }
-                } else {
-                    reply["error"] = "Invalid target coordinates. " + coordinate.dump();
-                    goto end;
-                }
+                map_targets.push_back(map_geo_position.find_all_nodes_within_radius(coordinate[0], coordinate[1], 1000));
             }
 
             /* Besides the CH itself we need a query object. */
             ContractionHierarchyQuery ch_query(ch);
 
-            /* We keep an index, so we can fall back to the coordinate list */
-            unsigned si = 0;
+            reply["matrix"] = json::array();
 
-            for(auto s:source_list) {
-                if (s == invalid_id) {
-                    /* when the source is invalid, we can't compute any
-                     * source-target pair for that source. Instead we
-                     * compute a great circle distance.
-                     */
-                    auto coordinate_from = source.at(si);
-                    for (unsigned ti = 0; ti < target.size(); ti++) {
-                        auto coordinate_to = target.at(ti);
-                        json pair = distance (coordinate_from, coordinate_to);
-                        reply["matrix"].push_back (pair);
-                    }
+            /* for all input departure points */
+            for (json::iterator it = source.begin(); it != source.end(); ++it) {
+                auto coordinate = it.value();
+                std::vector<GeoPositionToNode::NearestNeighborhoodQueryResult> map_sources = map_geo_position.find_all_nodes_within_radius(coordinate[0], coordinate[1], 1000);
 
-                } else {
+                if (map_sources.size() > 0) {
                     /* clear the query and assign the source */
                     ch_query.reset();
-                    ch_query.add_source(s);
 
-                    unsigned ti = 0;
-                    for (auto t:target_list) {
-                        json pair;
-                        if (t != invalid_id) {
-                            /* assign the target, and run the query. */
-                            ch_query.reset_target().add_target(t).run();
+                    /* add the intersections around the source, to start searching from */
+                    for (unsigned si = 0; si < map_sources.size(); si++) {
+                        ch_query.add_source(map_sources[si].id, map_sources[si].distance * 2);
+                    }
 
-                            /* when succesful, the distance is available */
-                            unsigned distance = ch_query.get_distance();
-                            if (distance != 0 && distance != inf_weight) {
+                    /* for all input arrival points */
+                    for (unsigned ti = 0; ti < map_targets.size(); ti++) {
 
-                                /* the travel time should be computed by a
-                                 * sum over all arcs.
-                                 */
-                                unsigned travel_time = 0;
-                                std::vector<unsigned>arcs = ch_query.get_arc_path();
-                                for (auto a:arcs) travel_time += graph.travel_time[a];
-
-                                /* we pair the result */
-                                pair.push_back (distance);
-                                pair.push_back (travel_time);
+                        if (map_targets[ti].size() > 0) {
+                            ch_query.reset_target();
+                            for (unsigned tj = 0; tj < map_targets[ti].size(); tj++) {
+                                /* assign the target, and run the query. */
+                                ch_query.add_target(map_targets[ti][tj].id, map_targets[ti][tj].distance * 2);
                             }
+                            ch_query.run();
+
+                            std::vector<unsigned>nodes = ch_query.get_node_path();
+                            if (nodes.size() > 1) {
+                                /* when a route is found */
+                                unsigned ascrowflies = geo_dist(coordinate[0], coordinate[1], graph.latitude[nodes[0]], graph.longitude[nodes[0]]) +
+                                                       geo_dist(graph.latitude[nodes[nodes.size() - 1]], graph.longitude[nodes[nodes.size() - 1]], target[ti][0], target[ti][1]);
+
+                                unsigned distance    = 0;
+                                unsigned travel_time = 0;
+
+                                std::vector<unsigned>arcs = ch_query.get_arc_path();
+                                for (auto a:arcs) {
+                                    distance    += graph.geo_distance[a];
+                                    travel_time += graph.travel_time[a];
+                                }
+
+                                reply["matrix"].push_back(triple(travel_time, distance, ascrowflies));
+
+                            } else {
+                                /* when there is no route found or the source and target snap to the same origin */
+                                unsigned ascrowflies = geo_dist(coordinate[0], coordinate[1], target[ti][0], target[ti][1]);
+                                reply["matrix"].push_back(triple(nullptr, nullptr, ascrowflies));
+                            }
+                        } else {
+                            /* when the arrival point did not return an intersection */
+                            unsigned ascrowflies = geo_dist(coordinate[0], coordinate[1], target[ti][0], target[ti][1]);
+                            reply["matrix"].push_back(triple(nullptr, nullptr, ascrowflies));
                         }
-                        if (pair.is_null()) {
-                            /* if the query failed we will compute the great
-                             * circle distance
-                             */
-                            auto coordinate_from = source.at(si);
-                            auto coordinate_to = target.at(ti);
-                            pair = distance (coordinate_from, coordinate_to);
-                        }
-                        reply["matrix"].push_back (pair);
-                        ti++;
+                    }
+                } else {
+                   /* when the source is invalid, we can't compute any
+                    * source-target pair for that source. Instead we
+                    * could compute the great circle distance.
+                    */
+                    for (unsigned ti = 0; ti < map_targets.size(); ti++) {
+                        unsigned ascrowflies = geo_dist(coordinate[0], coordinate[1], target[ti][0], target[ti][1]);
+                        reply["matrix"].push_back(triple(nullptr, nullptr, ascrowflies));
                     }
                 }
-                si++;
             }
-        } else {
-            reply["error"] = "Invalid JSON presentation.";
         }
 
-end:
         zmq_reply << reply.dump();
         socket.send(zmq_reply);
     }
