@@ -27,15 +27,10 @@ struct SimpleOSMCarRoutingGraph{
 
 };
 
-SimpleOSMCarRoutingGraph simple_load_osm_car_routing_graph_from_pbf(
-	const std::string&pbf_file,
-	const std::function<void(const std::string&)>&log_message = [](const std::string&){},
-	bool file_is_ordered_even_though_file_header_says_that_it_is_unordered = false
-);
-
 struct SimpleOSMPedestrianRoutingGraph{
 	std::vector<uint32_t>first_out;
 	std::vector<uint32_t>head;
+	std::vector<uint32_t>travel_time;
 	std::vector<uint32_t>geo_distance;
 	std::vector<float>latitude;
 	std::vector<float>longitude;
@@ -49,6 +44,12 @@ struct SimpleOSMPedestrianRoutingGraph{
 	}
 
 };
+
+SimpleOSMCarRoutingGraph simple_load_osm_car_routing_graph_from_pbf(
+	const std::string&pbf_file,
+	const std::function<void(const std::string&)>&log_message = [](const std::string&){},
+	bool file_is_ordered_even_though_file_header_says_that_it_is_unordered = false
+);
 
 SimpleOSMPedestrianRoutingGraph simple_load_osm_pedestrian_routing_graph_from_pbf(
 	const std::string&pbf_file,
