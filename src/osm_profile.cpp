@@ -65,6 +65,11 @@ namespace{
 }
 
 bool is_osm_way_used_by_pedestrians(uint64_t osm_way_id, const TagMap&tags, std::function<void(const std::string&)>log_message){
+
+    if (osm_way_id == ((uint64_t) 88570337)) {
+        printf("check\n");
+    }
+
 	const char* junction = tags["junction"];
 	if(junction != nullptr)
 		return true;
@@ -76,6 +81,29 @@ bool is_osm_way_used_by_pedestrians(uint64_t osm_way_id, const TagMap&tags, std:
 	const char* ferry = tags["ferry"];
 	if(ferry && str_eq(ferry, "ferry"))
 		return true;
+
+    const char* public_transport = tags["public_transport"];
+	if(public_transport != nullptr &&
+       (str_eq(public_transport, "stop_position") ||
+        str_eq(public_transport, "platform") ||
+        str_eq(public_transport, "stop_area") ||
+        str_eq(public_transport, "station")
+       )
+      ) {
+		return true;
+	}
+
+    const char* railway = tags["railway"];
+	if(railway != nullptr &&
+       (str_eq(railway, "halt") ||
+        str_eq(railway, "platform") ||
+        str_eq(railway, "subway_entrance") ||
+        str_eq(railway, "station") ||
+        str_eq(railway, "tram_stop")
+       )
+      ) {
+		return true;
+    }
 
 	const char* highway = tags["highway"];
 	if(highway == nullptr)
@@ -116,6 +144,10 @@ bool is_osm_way_used_by_pedestrians(uint64_t osm_way_id, const TagMap&tags, std:
 		str_eq(highway, "pedestrian") ||
 		str_eq(highway, "escape") ||
 		str_eq(highway, "steps") ||
+		str_eq(highway, "crossing") ||
+		str_eq(highway, "escalator") ||
+		str_eq(highway, "elevator") ||
+		str_eq(highway, "platform") ||
 		str_eq(highway, "ferry")
 	)
 		return true;
@@ -211,6 +243,7 @@ bool is_osm_way_used_by_bicycles(uint64_t osm_way_id, const TagMap&tags, std::fu
 		str_eq(highway, "cycleway") ||
 		str_eq(highway, "bridleway") ||
 		str_eq(highway, "pedestrian") ||
+		str_eq(highway, "crossing") ||
 		str_eq(highway, "escape") ||
 		str_eq(highway, "steps") ||
 		str_eq(highway, "ferry")
@@ -341,6 +374,9 @@ inline bool tag_cmp_no(const char *tag) {
 OSMWayDirectionCategory get_osm_bicycle_direction_category(uint64_t osm_way_id, const TagMap&tags, std::function<void(const std::string&)>log_message){
 	const char
 		*oneway = tags["oneway"],
+		*cycleway = tags["cycleway"],
+		*cycleway_left = tags["cycleway_left"],
+		*cycleway_right = tags["cycleway_right"],
 		*oneway_bicycle = tags["oneway:bicycle"],
 		*junction = tags["junction"];
 
@@ -355,6 +391,18 @@ OSMWayDirectionCategory get_osm_bicycle_direction_category(uint64_t osm_way_id, 
 
 	if (tag_cmp_yes(oneway))
 		return OSMWayDirectionCategory::only_open_forwards;
+
+	if (cycleway != nullptr &&  str_eq(cycleway, "opposite"))
+		return OSMWayDirectionCategory::open_in_both;
+
+	if (cycleway_left != nullptr && str_eq(cycleway_left, "opposite"))
+		return OSMWayDirectionCategory::open_in_both;
+
+	if (cycleway_right != nullptr && str_eq(cycleway_right, "opposite"))
+		return OSMWayDirectionCategory::open_in_both;
+
+	if (cycleway_left != nullptr && cycleway_right != nullptr)
+		return OSMWayDirectionCategory::open_in_both;
 
 	if (oneway_bicycle != nullptr)
 		oneway = oneway_bicycle;
