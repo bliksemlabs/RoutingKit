@@ -66,10 +66,6 @@ namespace{
 
 bool is_osm_way_used_by_pedestrians(uint64_t osm_way_id, const TagMap&tags, std::function<void(const std::string&)>log_message){
 
-    if (osm_way_id == ((uint64_t) 88570337)) {
-        printf("check\n");
-    }
-
 	const char* junction = tags["junction"];
 	if(junction != nullptr)
 		return true;
@@ -222,9 +218,13 @@ bool is_osm_way_used_by_bicycles(uint64_t osm_way_id, const TagMap&tags, std::fu
 
 	/* if a cycleway is specified we can be sure
 	 * that the highway will be used in a direction
-     */
+	 */
 	if(cycleway != nullptr || cycleway_left != nullptr || cycleway_right != nullptr || cycleway_both != nullptr)
 		return true;
+
+	const char* crossing = tags["crossing"];
+	if(crossing != nullptr && str_eq(crossing, "no"))
+		return false;
 
 	if(
 		str_eq(highway, "secondary") ||
@@ -392,16 +392,16 @@ OSMWayDirectionCategory get_osm_bicycle_direction_category(uint64_t osm_way_id, 
 	if (tag_cmp_yes(oneway))
 		return OSMWayDirectionCategory::only_open_forwards;
 
-	if (cycleway != nullptr &&  str_eq(cycleway, "opposite"))
-		return OSMWayDirectionCategory::open_in_both;
-
-	if (cycleway_left != nullptr && str_eq(cycleway_left, "opposite"))
-		return OSMWayDirectionCategory::open_in_both;
-
-	if (cycleway_right != nullptr && str_eq(cycleway_right, "opposite"))
-		return OSMWayDirectionCategory::open_in_both;
-
 	if (cycleway_left != nullptr && cycleway_right != nullptr)
+		return OSMWayDirectionCategory::open_in_both;
+
+	if (cycleway != nullptr && (str_eq(cycleway, "opposite") || str_eq(cycleway, "opposite_lane") || str_eq(cycleway, "opposite_track")))
+		return OSMWayDirectionCategory::open_in_both;
+
+	if (cycleway_left != nullptr && (str_eq(cycleway_left, "opposite") || str_eq(cycleway_left, "opposite_lane") || str_eq(cycleway_left, "opposite_track")))
+		return OSMWayDirectionCategory::open_in_both;
+
+	if (cycleway_right != nullptr && (str_eq(cycleway_right, "opposite") || str_eq(cycleway_right, "opposite_lane") || str_eq(cycleway_right, "opposite_track")))
 		return OSMWayDirectionCategory::open_in_both;
 
 	if (oneway_bicycle != nullptr)
