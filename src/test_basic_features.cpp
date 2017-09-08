@@ -153,7 +153,7 @@ int main(int argc, char*argv[]){
 		}
 	};
 
-	ContractionHierarchy ch = ContractionHierarchy::build(node_count, tail, head, travel_time, log_message);
+	ContractionHierarchy ch = ContractionHierarchy::build(node_count, tail, head, travel_time, travel_time, log_message);
 	auto cch_order = compute_nested_node_dissection_order_using_inertial_flow(node_count, tail, head, latitude, longitude, log_message);
 		
 	{
@@ -230,7 +230,7 @@ int main(int argc, char*argv[]){
 
 	{
 		CustomizableContractionHierarchy cch(cch_order, tail, head, log_message);
-		CustomizableContractionHierarchyMetric m(cch, travel_time);
+		CustomizableContractionHierarchyMetric m(cch, travel_time, travel_time);
 		long long customize_time = -get_micro_time();
 		m.customize();
 		customize_time += get_micro_time();
@@ -301,7 +301,7 @@ int main(int argc, char*argv[]){
 
 	{
 		CustomizableContractionHierarchy cch(cch_order, tail, head);
-		CustomizableContractionHierarchyMetric m(cch, travel_time);
+		CustomizableContractionHierarchyMetric m(cch, travel_time, travel_time);
 		auto perfect_ch = m.build_contraction_hierarchy_using_perfect_witness_search();
 		
 		cout << "perfect CH has " << perfect_ch.forward.head.size() << " forward arcs " << endl;
@@ -478,7 +478,7 @@ int main(int argc, char*argv[]){
 
 	{
 		CustomizableContractionHierarchy cch(cch_order, tail, head, log_message);
-		CustomizableContractionHierarchyMetric m(cch, travel_time);
+		CustomizableContractionHierarchyMetric m(cch, travel_time, travel_time);
 		m.customize();
 		CustomizableContractionHierarchyQuery q(m);
 		{
@@ -556,7 +556,7 @@ int main(int argc, char*argv[]){
 		ContractionHierarchyQuery ref_query(ch);
 
 		CustomizableContractionHierarchy cch(cch_order, tail, head);
-		CustomizableContractionHierarchyMetric m(cch, travel_time);
+		CustomizableContractionHierarchyMetric m(cch, travel_time, travel_time);
 		m.customize();
 		CustomizableContractionHierarchyQuery cch_query(m);
 		CustomizableContractionHierarchyQuery cch_ref_query(m);
@@ -629,7 +629,7 @@ int main(int argc, char*argv[]){
 		ContractionHierarchyQuery ref_query(ch);
 
 		CustomizableContractionHierarchy cch(cch_order, tail, head);
-		CustomizableContractionHierarchyMetric m(cch, travel_time);
+		CustomizableContractionHierarchyMetric m(cch, travel_time, travel_time);
 		m.customize();
 		CustomizableContractionHierarchyQuery cch_query(m);
 	
@@ -697,7 +697,7 @@ int main(int argc, char*argv[]){
 		ContractionHierarchyQuery ref_query(ch);
 
 		CustomizableContractionHierarchy cch(cch_order, tail, head);
-		CustomizableContractionHierarchyMetric m(cch, travel_time);
+		CustomizableContractionHierarchyMetric m(cch, travel_time, travel_time);
 		m.customize();
 		CustomizableContractionHierarchyQuery cch_query(m);
 	
@@ -741,9 +741,9 @@ int main(int argc, char*argv[]){
 		std::vector<unsigned>weight = travel_time;
 		CustomizableContractionHierarchy cch(cch_order, tail, head, log_message);
 
-		CustomizableContractionHierarchyMetric metric1(cch, weight);
-		CustomizableContractionHierarchyMetric metric2(cch, weight);
-		CustomizableContractionHierarchyMetric metric3(cch, weight);
+		CustomizableContractionHierarchyMetric metric1(cch, weight, weight);
+		CustomizableContractionHierarchyMetric metric2(cch, weight, weight);
+		CustomizableContractionHierarchyMetric metric3(cch, weight, weight);
 
 		metric1.customize();
 		metric2.customize();
@@ -762,7 +762,7 @@ int main(int argc, char*argv[]){
 			partial_customize.update_arc(a);
 		}
 
-		CustomizableContractionHierarchyMetric metric4(cch, weight);
+		CustomizableContractionHierarchyMetric metric4(cch, weight, weight);
 		metric4.customize();
 
 		metric1.customize();

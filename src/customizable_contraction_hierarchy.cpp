@@ -797,26 +797,38 @@ namespace{
 	void extract_initial_metric_of_cch_arc(const CustomizableContractionHierarchy&cch, CustomizableContractionHierarchyMetric&metric, unsigned cch_arc){
 		if(__builtin_expect(!cch.does_cch_arc_have_input_arc.is_set(cch_arc), true)){
 			metric.forward[cch_arc] = inf_weight;
+			metric.forward_alt[cch_arc] = inf_weight;
 			metric.backward[cch_arc] = inf_weight;
+			metric.backward_alt[cch_arc] = inf_weight;
 		} else {
 			{
 				unsigned i = cch.does_cch_arc_have_input_arc_mapper.to_local(cch_arc);
-				if(cch.forward_input_arc_of_cch[i] != invalid_id)
+				if(cch.forward_input_arc_of_cch[i] != invalid_id) {
 					metric.forward[cch_arc] = metric.input_weight[cch.forward_input_arc_of_cch[i]];
-				else
+					metric.forward_alt[cch_arc] = metric.input_alt[cch.forward_input_arc_of_cch[i]];
+				} else {
 					metric.forward[cch_arc] = inf_weight;
+					metric.forward_alt[cch_arc] = inf_weight;
+				}
 
-				if(cch.backward_input_arc_of_cch[i] != invalid_id)
+				if(cch.backward_input_arc_of_cch[i] != invalid_id) {
 					metric.backward[cch_arc] = metric.input_weight[cch.backward_input_arc_of_cch[i]];
-				else
+					metric.backward_alt[cch_arc] = metric.input_alt[cch.backward_input_arc_of_cch[i]];
+				} else {
 					metric.backward[cch_arc] = inf_weight;
+					metric.backward_alt[cch_arc] = inf_weight;
+				}
 			}
 			if(cch.does_cch_arc_have_extra_input_arc.is_set(cch_arc)){
 				unsigned i = cch.does_cch_arc_have_extra_input_arc_mapper.to_local(cch_arc);
-				for(unsigned j=cch.first_extra_forward_input_arc_of_cch[i]; j<cch.first_extra_forward_input_arc_of_cch[i+1]; ++j)
+				for(unsigned j=cch.first_extra_forward_input_arc_of_cch[i]; j<cch.first_extra_forward_input_arc_of_cch[i+1]; ++j) {
 					min_to(metric.forward[cch_arc], metric.input_weight[cch.extra_forward_input_arc_of_cch[j]]);
-				for(unsigned j=cch.first_extra_backward_input_arc_of_cch[i]; j<cch.first_extra_backward_input_arc_of_cch[i+1]; ++j)
+					min_to(metric.forward_alt[cch_arc], metric.input_alt[cch.extra_forward_input_arc_of_cch[j]]);
+				}
+				for(unsigned j=cch.first_extra_backward_input_arc_of_cch[i]; j<cch.first_extra_backward_input_arc_of_cch[i+1]; ++j) {
 					min_to(metric.backward[cch_arc], metric.input_weight[cch.extra_backward_input_arc_of_cch[j]]);
+					min_to(metric.backward_alt[cch_arc], metric.input_alt[cch.extra_backward_input_arc_of_cch[j]]);
+				}
 			}
 		}
 	}
@@ -870,44 +882,49 @@ namespace{
 	#endif
 }
 
-CustomizableContractionHierarchyMetric::CustomizableContractionHierarchyMetric(const CustomizableContractionHierarchy&cch, const std::vector<unsigned>&input_weight):
-	forward(cch.cch_arc_count()), backward(cch.cch_arc_count()), cch(&cch), input_weight(&input_weight[0]){
+CustomizableContractionHierarchyMetric::CustomizableContractionHierarchyMetric(const CustomizableContractionHierarchy&cch, const std::vector<unsigned>&input_weight, const std::vector<unsigned>&input_alt):
+	forward(cch.cch_arc_count()), forward_alt(cch.cch_arc_count()), backward(cch.cch_arc_count()), backward_alt(cch.cch_arc_count()), cch(&cch), input_weight(&input_weight[0]), input_alt(&input_alt[0]){
 }
 
-CustomizableContractionHierarchyMetric::CustomizableContractionHierarchyMetric(const CustomizableContractionHierarchy&cch, const unsigned*input_weight):
-	forward(cch.cch_arc_count()), backward(cch.cch_arc_count()), cch(&cch), input_weight(input_weight){
+CustomizableContractionHierarchyMetric::CustomizableContractionHierarchyMetric(const CustomizableContractionHierarchy&cch, const unsigned*input_weight, const unsigned*input_alt):
+	forward(cch.cch_arc_count()), forward_alt(cch.cch_arc_count()), backward(cch.cch_arc_count()), backward_alt(cch.cch_arc_count()), cch(&cch), input_weight(input_weight), input_alt(input_alt){
 }
 
-CustomizableContractionHierarchyMetric& CustomizableContractionHierarchyMetric::reset(const CustomizableContractionHierarchy&cch, const std::vector<unsigned>&input_weight){
+CustomizableContractionHierarchyMetric& CustomizableContractionHierarchyMetric::reset(const CustomizableContractionHierarchy&cch, const std::vector<unsigned>&input_weight, const std::vector<unsigned>&input_alt){
 	assert(input_weight.size() == cch.input_arc_count() && "Input weight vector has the wrong size");
-	reset(cch, &input_weight[0]);
+	assert(input_alt.size() == cch.input_arc_count() && "Input alt vector has the wrong size");
+	reset(cch, &input_weight[0], &input_alt[0]);
 	return *this;
 }
 
-CustomizableContractionHierarchyMetric& CustomizableContractionHierarchyMetric::reset(const std::vector<unsigned>&input_weight){
+CustomizableContractionHierarchyMetric& CustomizableContractionHierarchyMetric::reset(const std::vector<unsigned>&input_weight, const std::vector<unsigned>&input_alt){
 	assert(cch && "Need to be attached to a CCH");
 	assert(input_weight.size() == cch->input_arc_count() && "Input weight vector has the wrong size");
-	reset(&input_weight[0]);
+	assert(input_alt.size() == cch->input_arc_count() && "Input alt vector has the wrong size");
+	reset(&input_weight[0], &input_alt[0]);
 	return *this;
 }
 
-CustomizableContractionHierarchyMetric& CustomizableContractionHierarchyMetric::reset(const CustomizableContractionHierarchy&cch_, const unsigned*input_weight_){
+CustomizableContractionHierarchyMetric& CustomizableContractionHierarchyMetric::reset(const CustomizableContractionHierarchy&cch_, const unsigned*input_weight_, const unsigned*input_alt_){
 	if(!cch || cch->cch_arc_count() != forward.size()){
-		*this = CustomizableContractionHierarchyMetric(cch_, input_weight_);
+		*this = CustomizableContractionHierarchyMetric(cch_, input_weight_, input_alt_);
 	}else{
 		cch = &cch_;
 		input_weight = input_weight_;
+		input_alt = input_alt_;
 	}
 	return *this;
 }
 
-CustomizableContractionHierarchyMetric& CustomizableContractionHierarchyMetric::reset(const unsigned*input_weight_){
+CustomizableContractionHierarchyMetric& CustomizableContractionHierarchyMetric::reset(const unsigned*input_weight_, const unsigned*input_alt_){
 	input_weight = input_weight_;
+	input_alt = input_alt_;
 	return *this;
 }
 
 CustomizableContractionHierarchyMetric& CustomizableContractionHierarchyMetric::customize(){
 	assert(input_weight != nullptr && "Metric must be connected to a weight vector");
+	assert(input_alt != nullptr && "Metric must be connected to an alt vector");
 
 	extract_initial_metric(*cch, *this);
 
@@ -1027,6 +1044,7 @@ CustomizableContractionHierarchyParallelization& CustomizableContractionHierarch
 	assert(cch == metric.cch);
 	assert(thread_count != 0);
 	assert(metric.input_weight != nullptr && "Metric must be connected to a weight vector");
+	assert(metric.input_alt != nullptr && "Metric must be connected to an alt vector");
 
 	if(thread_count == 1){
 		metric.customize();
@@ -1092,6 +1110,7 @@ CustomizableContractionHierarchyPartialCustomization&CustomizableContractionHier
 CustomizableContractionHierarchyPartialCustomization&CustomizableContractionHierarchyPartialCustomization::customize(CustomizableContractionHierarchyMetric&metric){
 	assert(cch == metric.cch);
 	assert(metric.input_weight != nullptr && "Metric must be connected to a weight vector");
+	assert(metric.input_alt != nullptr && "Metric must be connected to an alt vector");
 
 	while(!q.empty()){
 		unsigned xy = q.pop();
@@ -1192,7 +1211,8 @@ namespace{
 	void reset_source_list(
 		const std::vector<unsigned>&elimination_tree_parent,
 		std::vector<unsigned>&source_node, std::vector<unsigned>&source_elimination_tree_end,
-		std::vector<bool>&in_forward_search_space, std::vector<unsigned>&forward_tentative_distance
+		std::vector<bool>&in_forward_search_space, std::vector<unsigned>&forward_tentative_distance,
+		std::vector<unsigned>&forward_tentative_alt
 	){
 		for(unsigned i=0; i<source_node.size(); ++i){
 			forall_ancestors(
@@ -1201,6 +1221,7 @@ namespace{
 				[&](unsigned x){
 					in_forward_search_space[x] = false;
 					forward_tentative_distance[x] = inf_weight;
+					forward_tentative_alt[x] = inf_weight;
 					return true;
 				}
 			);
@@ -1211,8 +1232,8 @@ namespace{
 }
 
 CustomizableContractionHierarchyQuery& CustomizableContractionHierarchyQuery::reset(){
-	reset_source_list(cch->elimination_tree_parent, source_node, source_elimination_tree_end, in_forward_search_space, forward_tentative_distance);
-	reset_source_list(cch->elimination_tree_parent, target_node, target_elimination_tree_end, in_backward_search_space, backward_tentative_distance);
+	reset_source_list(cch->elimination_tree_parent, source_node, source_elimination_tree_end, in_forward_search_space, forward_tentative_distance, forward_tentative_alt);
+	reset_source_list(cch->elimination_tree_parent, target_node, target_elimination_tree_end, in_backward_search_space, backward_tentative_distance, backward_tentative_alt);
 	state = query_state_initialized;
 	return *this;
 }
@@ -1232,6 +1253,8 @@ CustomizableContractionHierarchyQuery& CustomizableContractionHierarchyQuery::re
 CustomizableContractionHierarchyQuery::CustomizableContractionHierarchyQuery(const CustomizableContractionHierarchyMetric&metric):
 	forward_tentative_distance(metric.cch->node_count(), inf_weight),
 	backward_tentative_distance(metric.cch->node_count(), inf_weight),
+	forward_tentative_alt(metric.cch->node_count(), inf_weight),
+	backward_tentative_alt(metric.cch->node_count(), inf_weight),
 	forward_predecessor_node(metric.cch->node_count()),
 	backward_predecessor_node(metric.cch->node_count()),
 	in_forward_search_space(metric.cch->node_count(), false),
@@ -1243,7 +1266,7 @@ CustomizableContractionHierarchyQuery::CustomizableContractionHierarchyQuery(con
 
 namespace{
 	void internal_add_source(
-		unsigned external_s, unsigned dist_to_s,
+		unsigned external_s, unsigned dist_to_s, unsigned alt_to_s,
 		const std::vector<unsigned>&rank,
 		const std::vector<unsigned>&elimination_tree_parent,
 		std::vector<unsigned>&forward_tentative_distance,
@@ -1283,11 +1306,11 @@ namespace{
 
 
 
-CustomizableContractionHierarchyQuery& CustomizableContractionHierarchyQuery::add_source(unsigned external_s, unsigned dist_to_s){
+CustomizableContractionHierarchyQuery& CustomizableContractionHierarchyQuery::add_source(unsigned external_s, unsigned dist_to_s, unsigned alt_to_s){
 	assert(external_s < cch->node_count());
 	assert(state == query_state_initialized || state == query_state_target_pinned);
 	internal_add_source(
-		external_s, dist_to_s,
+		external_s, dist_to_s, alt_to_s,
 		cch->rank,
 		cch->elimination_tree_parent,
 		forward_tentative_distance,
@@ -1299,11 +1322,11 @@ CustomizableContractionHierarchyQuery& CustomizableContractionHierarchyQuery::ad
 	return *this;
 }
 	
-CustomizableContractionHierarchyQuery& CustomizableContractionHierarchyQuery::add_target(unsigned external_t, unsigned dist_to_t){
+CustomizableContractionHierarchyQuery& CustomizableContractionHierarchyQuery::add_target(unsigned external_t, unsigned dist_to_t, unsigned alt_to_t){
 	assert(external_t < cch->node_count());
 	assert(state == query_state_initialized || state == query_state_source_pinned);
 	internal_add_source(
-		external_t, dist_to_t,
+		external_t, dist_to_t, alt_to_t,
 		cch->rank,
 		cch->elimination_tree_parent,
 		backward_tentative_distance,
@@ -1321,7 +1344,9 @@ namespace{
 		const std::vector<unsigned>&first_out,
 		const std::vector<unsigned>&head,
 		const std::vector<unsigned>&weight,
+		const std::vector<unsigned>&alt,
 		std::vector<unsigned>&tentative_distance,
+		std::vector<unsigned>&tentative_alt,
 		const SetPred&set_node_predecessor,
 		unsigned x
 	){
@@ -1330,6 +1355,7 @@ namespace{
 			unsigned y=head[xy];
 			if(tentative_distance[x] + weight[xy] < tentative_distance[y]){
 				tentative_distance[y] = tentative_distance[x] + weight[xy];
+				tentative_alt[y] = tentative_alt[x] + alt[xy];
 				set_node_predecessor(y, x);
 			}
 		}
@@ -1340,7 +1366,9 @@ namespace{
 		const std::vector<unsigned>&first_out,
 		const std::vector<unsigned>&head,
 		const std::vector<unsigned>&weight,
+		const std::vector<unsigned>&alt,
 		std::vector<unsigned>&tentative_distance,
+		std::vector<unsigned>&tentative_alt,
 		const SetPred&set_node_predecessor,
 		unsigned x
 	){
@@ -1348,6 +1376,7 @@ namespace{
 			unsigned y=head[xy];
 			if(tentative_distance[y] + weight[xy] < tentative_distance[x]){
 				tentative_distance[x] = tentative_distance[y] + weight[xy];
+				tentative_alt[x] = tentative_alt[y] + alt[xy];
 				set_node_predecessor(x, y);
 			}
 		}
@@ -1365,8 +1394,9 @@ CustomizableContractionHierarchyQuery& CustomizableContractionHierarchyQuery::ru
 			[&](unsigned x){
 
 				relax_outgoing_arcs(
-					cch->up_first_out, cch->up_head, metric->forward,
-					forward_tentative_distance, [&](unsigned a, unsigned b){forward_predecessor_node[a] = b;},
+					cch->up_first_out, cch->up_head, metric->forward, metric->forward_alt,
+					forward_tentative_distance, forward_tentative_alt,
+					[&](unsigned a, unsigned b){forward_predecessor_node[a] = b;},
 					x
 				);
 				return true;
@@ -1383,6 +1413,7 @@ CustomizableContractionHierarchyQuery& CustomizableContractionHierarchyQuery::ru
 
 	shortest_path_meeting_node = invalid_id;
 	unsigned shortest_path_length = inf_weight;
+	unsigned shortest_path_alt = inf_weight;
 
 	for(unsigned i = target_node.size()-1; i!=(unsigned)-1; --i){
 		forall_ancestors(
@@ -1390,14 +1421,16 @@ CustomizableContractionHierarchyQuery& CustomizableContractionHierarchyQuery::ru
 			target_node[i], target_elimination_tree_end[i],
 			[&](unsigned x){
 				relax_outgoing_arcs(
-					cch->up_first_out, cch->up_head, metric->backward,
-					backward_tentative_distance, [&](unsigned a, unsigned b){backward_predecessor_node[a] = b;},
+					cch->up_first_out, cch->up_head, metric->backward, metric->backward_alt,
+					backward_tentative_distance, backward_tentative_alt,
+					[&](unsigned a, unsigned b){backward_predecessor_node[a] = b;},
 					x
 				);
 				if(in_forward_search_space[x]){
 					unsigned l = forward_tentative_distance[x] + backward_tentative_distance[x];
 					if(l < shortest_path_length){
 						shortest_path_length = l;
+						shortest_path_alt = forward_tentative_alt[x] + backward_tentative_alt[x];
 						shortest_path_meeting_node = x;
 					}
 				}
@@ -1421,6 +1454,14 @@ unsigned CustomizableContractionHierarchyQuery::get_distance(){
 		return inf_weight;
 	else
 		return forward_tentative_distance[shortest_path_meeting_node] + backward_tentative_distance[shortest_path_meeting_node];
+}
+
+unsigned CustomizableContractionHierarchyQuery::get_alt(){
+	assert(state == query_state_run);
+	if(shortest_path_meeting_node == invalid_id)
+		return inf_weight;
+	else
+		return forward_tentative_alt[shortest_path_meeting_node] + backward_tentative_alt[shortest_path_meeting_node];
 }
 
 unsigned CustomizableContractionHierarchyQuery::get_used_source(){
@@ -1723,7 +1764,8 @@ namespace{
 		const std::vector<unsigned>&elimination_tree_parent,
 		const std::vector<unsigned>&target_node,
 		const std::vector<unsigned>&target_elimination_tree_end,
-		std::vector<unsigned>&forward_tentative_distance
+		std::vector<unsigned>&forward_tentative_distance,
+		std::vector<unsigned>&forward_tentative_alt
 	){
 		for(unsigned i = target_node.size()-1; i!=(unsigned)-1; --i){
 			forall_ancestors(
@@ -1731,6 +1773,7 @@ namespace{
 				target_node[i], target_elimination_tree_end[i],
 				[&](unsigned x){
 					forward_tentative_distance[x] = inf_weight;
+					forward_tentative_alt[x] = inf_weight;
 					return true;
 				}
 			);
@@ -1741,8 +1784,8 @@ namespace{
 CustomizableContractionHierarchyQuery& CustomizableContractionHierarchyQuery::reset_source(){
 	assert(state == query_state_target_pinned || state == query_state_target_run);
 
-	reset_source_list(cch->elimination_tree_parent, source_node, source_elimination_tree_end, in_forward_search_space, forward_tentative_distance);
-	reset_target_distances(cch->elimination_tree_parent, target_node, target_elimination_tree_end, forward_tentative_distance);
+	reset_source_list(cch->elimination_tree_parent, source_node, source_elimination_tree_end, in_forward_search_space, forward_tentative_distance, forward_tentative_alt);
+	reset_target_distances(cch->elimination_tree_parent, target_node, target_elimination_tree_end, forward_tentative_distance, forward_tentative_alt);
 
 	state = query_state_target_pinned;
 	return *this;
@@ -1751,8 +1794,8 @@ CustomizableContractionHierarchyQuery& CustomizableContractionHierarchyQuery::re
 CustomizableContractionHierarchyQuery& CustomizableContractionHierarchyQuery::reset_target(){
 	assert(state == query_state_source_pinned || state == query_state_source_run);
 
-	reset_source_list(cch->elimination_tree_parent, target_node, target_elimination_tree_end, in_backward_search_space, backward_tentative_distance);
-	reset_target_distances(cch->elimination_tree_parent, source_node, source_elimination_tree_end, backward_tentative_distance);
+	reset_source_list(cch->elimination_tree_parent, target_node, target_elimination_tree_end, in_backward_search_space, backward_tentative_distance, forward_tentative_alt);
+	reset_target_distances(cch->elimination_tree_parent, source_node, source_elimination_tree_end, backward_tentative_distance, forward_tentative_alt);
 
 	state = query_state_source_pinned;
 	return *this;
@@ -1762,7 +1805,9 @@ namespace{
 	void internal_run_to_pinned_targets(
 		const CustomizableContractionHierarchy&cch,
 		const std::vector<unsigned>&forward_weight, const std::vector<unsigned>&backward_weight,
+		const std::vector<unsigned>&forward_alt, const std::vector<unsigned>&backward_alt,
 		std::vector<unsigned>&forward_tentative_distance, std::vector<unsigned>&backward_tentative_distance,
+		std::vector<unsigned>&forward_tentative_alt, std::vector<unsigned>&backward_tentative_alt,
 		const std::vector<unsigned>&source_node, const std::vector<unsigned>&source_elimination_tree_end,
 		const std::vector<unsigned>&target_node, const std::vector<unsigned>&target_elimination_tree_end
 	){
@@ -1772,8 +1817,9 @@ namespace{
 				source_node[i], source_elimination_tree_end[i],
 				[&](unsigned x){
 					relax_outgoing_arcs(
-						cch.up_first_out, cch.up_head, forward_weight,
-						forward_tentative_distance, [](unsigned,unsigned){},
+						cch.up_first_out, cch.up_head, forward_weight, forward_alt,
+						forward_tentative_distance, forward_tentative_alt,
+						[](unsigned,unsigned){},
 						x
 					);
 					return true;
@@ -1799,8 +1845,9 @@ namespace{
 			unsigned x = stack[stack_end];
 			stack[stack_end] = inf_weight;
 			relax_incoming_arcs(
-				cch.up_first_out, cch.up_head, backward_weight,
-				forward_tentative_distance, [](unsigned,unsigned){},
+				cch.up_first_out, cch.up_head, backward_weight, backward_alt,
+				forward_tentative_distance, forward_tentative_alt,
+				[](unsigned,unsigned){},
 				x
 			);
 		}
@@ -1812,7 +1859,9 @@ CustomizableContractionHierarchyQuery& CustomizableContractionHierarchyQuery::ru
 	internal_run_to_pinned_targets(
 		*cch,
 		metric->forward, metric->backward,
+		metric->forward_alt, metric->backward_alt,
 		forward_tentative_distance, backward_tentative_distance,
+		forward_tentative_alt, backward_tentative_alt,
 		source_node, source_elimination_tree_end,
 		target_node, target_elimination_tree_end
 	);
@@ -1825,7 +1874,9 @@ CustomizableContractionHierarchyQuery& CustomizableContractionHierarchyQuery::ru
 	internal_run_to_pinned_targets(
 		*cch,
 		metric->backward, metric->forward,
+		metric->backward_alt, metric->forward_alt,
 		backward_tentative_distance, forward_tentative_distance,
+		backward_tentative_alt, forward_tentative_alt,
 		target_node, target_elimination_tree_end,
 		source_node, source_elimination_tree_end
 	);
@@ -1944,6 +1995,7 @@ ContractionHierarchy CustomizableContractionHierarchyMetric::build_contraction_h
 	ch.forward.head = keep_element_of_vector_if(keep_forward_arc, cch->up_head);
 	ch.forward.first_out = invert_vector(keep_element_of_vector_if(keep_forward_arc, cch->up_tail), cch->node_count());
 	ch.forward.weight = keep_element_of_vector_if(keep_forward_arc, forward);
+	ch.forward.alt = keep_element_of_vector_if(keep_forward_arc, forward_alt);
 	ch.forward.is_shortcut_an_original_arc = BitVector(ch.forward.head.size(), false);
 	ch.forward.shortcut_first_arc = std::vector<unsigned>(forward_map.local_id_count());
 	ch.forward.shortcut_second_arc = std::vector<unsigned>(forward_map.local_id_count());
@@ -1951,6 +2003,7 @@ ContractionHierarchy CustomizableContractionHierarchyMetric::build_contraction_h
 	ch.backward.head = keep_element_of_vector_if(keep_backward_arc, cch->up_head);
 	ch.backward.first_out = invert_vector(keep_element_of_vector_if(keep_backward_arc, cch->up_tail), cch->node_count());
 	ch.backward.weight = keep_element_of_vector_if(keep_backward_arc, backward);
+	ch.backward.alt = keep_element_of_vector_if(keep_backward_arc, backward_alt);
 	ch.backward.is_shortcut_an_original_arc = BitVector(ch.backward.head.size(), false);
 	ch.backward.shortcut_first_arc = std::vector<unsigned>(backward_map.local_id_count());
 	ch.backward.shortcut_second_arc = std::vector<unsigned>(backward_map.local_id_count());

@@ -16,19 +16,19 @@ public:
 	static const unsigned default_max_pop_count = 500;
 
 	static ContractionHierarchy build(
-		unsigned node_count, std::vector<unsigned>tail, std::vector<unsigned>head, std::vector<unsigned>weight,
+		unsigned node_count, std::vector<unsigned>tail, std::vector<unsigned>head, std::vector<unsigned>weight, std::vector<unsigned> alt,
 		const std::function<void(std::string)>&log_message = std::function<void(std::string)>(), unsigned max_pop_count = default_max_pop_count
 	);
 
 	static ContractionHierarchy build_given_rank(
 		std::vector<unsigned>rank,
-		std::vector<unsigned>tail, std::vector<unsigned>head, std::vector<unsigned>weight,
+		std::vector<unsigned>tail, std::vector<unsigned>head, std::vector<unsigned>weight, std::vector<unsigned> alt,
 		const std::function<void(std::string)>&log_message = std::function<void(std::string)>(), unsigned max_pop_count = default_max_pop_count
 	);
 
 	static ContractionHierarchy build_given_order(
 		std::vector<unsigned>order,
-		std::vector<unsigned>tail, std::vector<unsigned>head, std::vector<unsigned>weight,
+		std::vector<unsigned>tail, std::vector<unsigned>head, std::vector<unsigned>weight, std::vector<unsigned> alt,
 		const std::function<void(std::string)>&log_message = std::function<void(std::string)>(), unsigned max_pop_count = default_max_pop_count
 	);
 
@@ -50,6 +50,7 @@ public:
 		std::vector<unsigned>first_out;
 		std::vector<unsigned>head;
 		std::vector<unsigned>weight;
+		std::vector<unsigned>alt;
 
 		BitVector is_shortcut_an_original_arc;
 		std::vector<unsigned>shortcut_first_arc;
@@ -70,8 +71,8 @@ public:
 	ContractionHierarchyQuery&reset();
 	ContractionHierarchyQuery&reset(const ContractionHierarchy&ch);
 
-	ContractionHierarchyQuery&add_source(unsigned s, unsigned dist_to_s = 0);
-	ContractionHierarchyQuery&add_target(unsigned t, unsigned dist_to_t = 0);
+	ContractionHierarchyQuery&add_source(unsigned s, unsigned dist_to_s = 0, unsigned alt_to_s = 0);
+	ContractionHierarchyQuery&add_target(unsigned t, unsigned dist_to_t = 0, unsigned alt_to_t = 0);
 
 	ContractionHierarchyQuery&run();
 
@@ -79,6 +80,7 @@ public:
 	unsigned get_used_target();
 
 	unsigned get_distance();
+	unsigned get_alt();
 	std::vector<unsigned>get_node_path();
 	std::vector<unsigned>get_arc_path();
 
@@ -88,6 +90,9 @@ public:
 
 	ContractionHierarchyQuery& get_distances_to_targets(unsigned*dist);
 	std::vector<unsigned> get_distances_to_targets();
+
+	ContractionHierarchyQuery& get_alts_to_targets(unsigned*alt);
+	std::vector<unsigned> get_alts_to_targets();
 	
 	ContractionHierarchyQuery& reset_target();
 	ContractionHierarchyQuery& pin_sources(const std::vector<unsigned>&);
@@ -95,6 +100,9 @@ public:
 
 	ContractionHierarchyQuery& get_distances_to_sources(unsigned*dist);
 	std::vector<unsigned> get_distances_to_sources();
+
+	ContractionHierarchyQuery& get_alts_to_sources(unsigned*alt);
+	std::vector<unsigned> get_alts_to_sources();
 		
 //private:
 	const ContractionHierarchy*ch;
@@ -102,6 +110,7 @@ public:
 	TimestampFlags was_forward_pushed, was_backward_pushed;
 	MinIDQueue forward_queue, backward_queue;
 	std::vector<unsigned>forward_tentative_distance, backward_tentative_distance;
+	std::vector<unsigned>forward_tentative_alt, backward_tentative_alt;
 	std::vector<unsigned>forward_predecessor_node, backward_predecessor_node;
 	std::vector<unsigned>forward_predecessor_arc, backward_predecessor_arc;
 	unsigned shortest_path_meeting_node;

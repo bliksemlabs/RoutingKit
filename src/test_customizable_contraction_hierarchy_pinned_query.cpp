@@ -58,7 +58,7 @@ int main(int argc, char*argv[]){
 		cout << "Customizing CCH ... " << flush;
 		
 		timer = -get_micro_time();
-		CustomizableContractionHierarchyMetric metric(cch, weight);
+		CustomizableContractionHierarchyMetric metric(cch, weight, weight);
 		metric.customize();
 		timer += get_micro_time();
 

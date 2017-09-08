@@ -67,7 +67,7 @@ int main(int argc, char*argv[]){
 		cout << "Customizing CCH ... " << flush;
 		
 		timer = -get_micro_time();
-		CustomizableContractionHierarchyMetric metric(cch, weight);
+		CustomizableContractionHierarchyMetric metric(cch, weight, weight);
 		ContractionHierarchy ch = metric.build_contraction_hierarchy_using_perfect_witness_search();
 		timer += get_micro_time();
 

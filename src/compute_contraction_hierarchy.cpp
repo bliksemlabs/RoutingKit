@@ -60,7 +60,7 @@ int main(int argc, char*argv[]){
 			throw runtime_error("The weight vector must be as long as the number of arcs");
 
 		
-		auto ch = ContractionHierarchy::build(node_count, invert_inverse_vector(first_out), head, weight, [](string msg){cout << msg << endl;});
+		auto ch = ContractionHierarchy::build(node_count, invert_inverse_vector(first_out), head, weight, weight, [](string msg){cout << msg << endl;});
 		check_contraction_hierarchy_for_errors(ch);
 		ch.save_file(ch_file);
 

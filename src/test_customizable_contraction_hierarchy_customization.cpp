@@ -59,7 +59,7 @@ int main(int argc, char*argv[]){
 		cout << "Regular CCH Customization ... " << flush;
 		
 		timer = -get_micro_time();
-		CustomizableContractionHierarchyMetric reference_metric(cch, weight);
+		CustomizableContractionHierarchyMetric reference_metric(cch, weight, weight);
 		reference_metric.customize();
 		timer += get_micro_time();
 
@@ -75,7 +75,7 @@ int main(int argc, char*argv[]){
 
 		cout << "Parallel CCH Customization ... " << flush;
 		timer = -get_micro_time();
-		CustomizableContractionHierarchyMetric parallel_metric(cch, weight);
+		CustomizableContractionHierarchyMetric parallel_metric(cch, weight, weight);
 		parallel_customization.customize(parallel_metric);
 		timer += get_micro_time();
 		cout << "done [" << timer << "musec]" << endl;
