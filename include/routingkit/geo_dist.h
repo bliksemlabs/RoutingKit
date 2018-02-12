@@ -123,6 +123,49 @@ inline double geo_dist(double lat_a, double lon_a, double lat_b, double lon_b){
 	return len;
 }
 
+/* Inspired by:
+ * http://www.sunshine2k.de/coding/java/PointOnLine/PointOnLine.html
+ */
+
+inline void geo_dist_projected_to_arc(double a_lat, double a_lon, double b_lat, double b_lon, double p_lat, double p_lon, double& a_dist, double& b_dist, double& pp_dist, double& pp_lat, double& pp_lon) {
+	/* Get the dot product of e1, e2 */
+	double e1_lat = b_lat - a_lat;
+	double e1_lon = b_lon - a_lon;
+
+	double e2_lat = p_lat - a_lat;
+	double e2_lon = p_lon - a_lon;
+
+	double recArea = (e1_lat * e1_lat) + (e1_lon * e1_lon);
+	double valDp = (e1_lat * e2_lat) + (e1_lon * e2_lon);
+
+	if (valDp > 0 && valDp < recArea) {
+		/* Get the position of the projected point */
+		pp_lat = a_lat + (valDp * e1_lat) / recArea;
+		pp_lon = a_lon + (valDp * e1_lon) / recArea;
+
+		pp_dist = geo_dist(p_lat, p_lon, pp_lat, pp_lon);
+		a_dist = geo_dist(pp_lat, pp_lon, a_lat, a_lon) + pp_dist;
+		b_dist = geo_dist(pp_lat, pp_lon, b_lat, b_lon) + pp_dist;
+
+	} else {
+		a_dist = geo_dist(p_lat, p_lon, a_lat, a_lon);
+		b_dist = geo_dist(p_lat, p_lon, b_lat, b_lon);
+		double e_dist = geo_dist(a_lat, a_lon, b_lat, b_lon);
+
+		if (a_dist < b_dist) {
+			pp_lat  = a_lat;
+			pp_lon  = a_lon;
+			pp_dist = a_dist;
+			b_dist  = a_dist + e_dist;
+		} else {
+			pp_lat  = b_lat;
+			pp_lon  = b_lon;
+			pp_dist = b_dist;
+			a_dist  = b_dist + e_dist;
+		}
+	}
+}
+
 } // RoutingKit
 
 #endif
